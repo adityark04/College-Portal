@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Calendar</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .calendar-day {
+      width: 40px;
+      height: 40px;
+      display: inline-block;
+      text-align: center;
+      margin: 2px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .present { background-color: green; }
+    .absent { background-color: red; }
+    .default { background-color: white; }
+  </style>
+</head>
+<body>
+  <div class="container my-4">
+    <h2>Attendance Calendar for Student</h2>
+    <div id="calendar" class="d-flex flex-wrap justify-content-start"></div>
+    <br>
+    <button class="btn btn-primary" onclick="submitAttendance()">Submit Attendance</button>
+    <a href="/dashboard" class="btn btn-secondary">Back</a>
+  </div>
+
+  <script>
+    const studentId = 1; // The ID of the student
+    const year = new Date().getFullYear();
+    const daysInYear = 365;
+    const attendanceData = {}; // Store attendance data here
+    
+    // Generate calendar for the entire year
+    function generateCalendar() {
+      const calendarContainer = document.getElementById("calendar");
+      const firstDayOfYear = new Date(year, 0, 1);
+      let currentDate = firstDayOfYear;
+
+      for (let i = 0; i < daysInYear; i++) {
+        const dateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        const dayBox = document.createElement("div");
+        dayBox.classList.add("calendar-day");
+        dayBox.setAttribute("data-date", dateStr);
+        dayBox.innerText = currentDate.getDate();
+
+        // Add classes based on current attendance status
+        dayBox.addEventListener("click", () => toggleAttendance(dayBox, dateStr));
+
+        calendarContainer.appendChild(dayBox);
+
+        // Move to the next day
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+
+    // Toggle attendance status (Present/Absent) for a specific day
+    function toggleAttendance(dayBox, date) {
+      if (attendanceData[date] === 'Present') {
+        attendanceData[date] = 'Absent';
+        dayBox.classList.remove("present");
+        dayBox.classList.add("absent");
+      } else {
+        attendanceData[date] = 'Present';
+        dayBox.classList.remove("absent");
+        dayBox.classList.add("present");
+      }
+    }
+
+    // Submit attendance data
+    function submitAttendance() {
+      fetch("/submit-attendance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ student_id: studentId, attendance: attendanceData }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert("Attendance updated successfully!");
+        } else {
+          alert("Failed to update attendance.");
+        }
+      });
+    }
+
+    generateCalendar(); // Initialize the calendar
+  </script>
+</body>
+</html>
